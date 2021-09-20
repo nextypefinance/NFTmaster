@@ -24,10 +24,17 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
     // fee pay token list (token > fee)
     mapping(address => uint256) public feePayTokenList;
     
+    // NFT Original miner (NFTtoken > tokenId > address)
+    mapping(address => mapping(uint256 => address)) public originMiner;
+    address public oriMinerSetter;
+    uint256 public oriMinerFeeRate;
+
     address public feeTo;
     
     constructor() public {
         feeTo = _msgSender();
+        oriMinerSetter = _msgSender();
+        oriMinerFeeRate = 100;     //this mean 0.01
     }
     
     // fee
@@ -127,7 +134,7 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
     }
     
     // sold order
-    function soldOrder(address nftToken, uint256 tokenID, address payToken, uint256 payAmount) public nonReentrant {
+    function soldOrder(address nftToken, uint256 tokenID, address payToken, uint256 payAmount) public nonReentrant returns (uint) {
         require(nftToken != address(0), "nft address is zero address");
         require(payToken != address(0), "pay token address is zero address");
         require(nftToken != payToken, "nftToken and payToken is same");
@@ -153,6 +160,9 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
             orderOfOwner[newOrderId] = msg.sender;
             
             emit SoldOrder(nftToken, tokenID, payToken, payAmount);
+            return newOrderId;
+        }else{
+            return 0;
         }
     }
     
@@ -250,6 +260,14 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
                 address payable _feeTo = address(uint160(feeTo));
                 _feeTo.transfer(tokenFee);
             }
+
+            if((oriMinerFeeRate > 0) && (originMiner[_NFTToken][_NFTTokenID] != address(0))){
+                address payable _oriFeeTo = address(uint160(originMiner[_NFTToken][_NFTTokenID]));
+                uint256 oriFee = _payAmount.div(10000).mul(oriMinerFeeRate);
+                _oriFeeTo.transfer(oriFee);
+
+                amountValid = amountValid.sub(oriFee);
+            }
             
             address payable _OrderOwnerAddress = address(uint160(_OrderOwner));
             _OrderOwnerAddress.transfer(amountValid);
@@ -261,6 +279,14 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
             if((tokenFee > 0) && (rate > 0)){
                 IERC20(_payTokenAddress).safeTransferFrom(msg.sender, feeTo, tokenFee);
             }
+
+            if((oriMinerFeeRate > 0) && (originMiner[_NFTToken][_NFTTokenID] != address(0))){
+                uint256 oriFee = _payAmount.div(10000).mul(oriMinerFeeRate);
+                IERC20(_payTokenAddress).safeTransferFrom(msg.sender, originMiner[_NFTToken][_NFTTokenID], oriFee);
+
+                amountValid = amountValid.sub(oriFee);
+            }
+
             IERC20(_payTokenAddress).safeTransferFrom(msg.sender, _OrderOwner, amountValid);
         }
 
@@ -287,4 +313,28 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
         IERC20(token).safeTransferFrom(address(this), msg.sender, balance);
     }
 
+    function setOriMiner(address NFTtoken, uint256 tokenId, address oriAddress) external {
+        require(msg.sender == oriMinerSetter, 'setOriMiner: FORBIDDEN');
+        require(NFTtoken != address(0), "NFTtoken is zero address");
+
+        originMiner[NFTtoken][tokenId] = oriAddress;
+    }
+
+    function getOriMiner(address NFTtoken, uint256 tokenId) external view returns (address) {
+        require(NFTtoken != address(0), "NFTtoken is zero address");
+
+        return originMiner[NFTtoken][tokenId];
+    }
+
+    function setOriMinerFeeToRate(uint256 _rate) external {
+        require(msg.sender == oriMinerSetter, 'setOriMinerFeeToRate: FORBIDDEN');
+	    require(_rate < 10000, "setOriMinerFeeToRate: FEE_TO_RATE_TOO_HIGH");
+        oriMinerFeeRate = _rate;
+    }
+
+    function setOriMinerSetter(address _oriMinerSetter) external {
+        require(msg.sender == oriMinerSetter || msg.sender == owner(), 'setOriMinerSetter: FORBIDDEN');
+        require(_oriMinerSetter != address(0), "setOriMinerSetter: _oriMinerSetter is zero address");
+        oriMinerSetter = _oriMinerSetter;
+    }
 }
