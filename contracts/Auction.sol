@@ -61,6 +61,18 @@ contract Auction is Ownable, ReentrancyGuard{
         payToken = payTokenList[payType];
     }
 
+    function getAuctionInfo() external view returns(address _auctionOwner, address _token, uint256 _tokenId, uint _initFund, uint _bidIncrement, uint _endTime, uint _payType, address _payToken, address _highestBidder, uint _fundsByBidder) {
+        _auctionOwner = auctionOwner;
+        _token = NFTtoken;
+        _tokenId = tokenId;
+        _bidIncrement = bidIncrement;
+        _initFund = initFund;
+        _endTime = endTime;
+        _payType = payType;
+        _payToken = payToken;
+        _highestBidder = highestBidder;
+        _fundsByBidder = fundsByBidder[highestBidder];
+    }
 
     function getHighestBid() external view returns (uint)
     {
