@@ -94,6 +94,7 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
     function setPayTokenFee(address token, uint256 amount) public onlyOwner {
         require(token != address(0), "token is zero address");
         require(payTokenIsAllowed(token) == true, "token is not allowed");
+        require(amount < 10000, "amount overflow");
         
         feePayTokenList[token] = amount;
         emit SetPayTokenFee(token, amount);
@@ -182,52 +183,16 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
         emit SoldOutOrder(orderID);
     }
     
-    // amoun mul
-    function fullMul(uint256 x, uint256 y) private pure returns (uint256 l, uint256 h) {
-        uint256 mm = mulmod (x, y, uint256(-1));
-        l = x * y;
-        h = mm - l;
-        if (mm < l) h -= 1;
-    }
-
-    // amount mul + div
-    function mulDiv(uint256 x, uint256 y, uint256 z) private pure returns (uint256) {
-        (uint256 l, uint256 h) = fullMul (x, y);
-        require (h < z);
-        
-        uint256 mm = mulmod (x, y, z);
-        if (mm > l) h -= 1;
-        l -= mm;
-        
-        uint256 pow2 = z & -z;
-        z /= pow2;
-        l /= pow2;
-        l += h * ((-pow2) / pow2 + 1);
-        
-        uint256 r = 1;
-        r *= 2 - z * r;
-        r *= 2 - z * r;
-        r *= 2 - z * r;
-        r *= 2 - z * r;
-        r *= 2 - z * r;
-        r *= 2 - z * r;
-        r *= 2 - z * r;
-        r *= 2 - z * r;
-        
-        return l * r;
-    }
     
     // calculate arrival amount
     function calculateArrivalAmount(uint256 amount, address token) public view returns (uint256 tokenFee, uint256 amountValid, uint256 rate) {
         require(amount > 0, "amount cannot be 0");
         require(token != address(0), "token is zero address");
         require(payTokenIsAllowed(token) == true, "token is not allowed");
-        
-        uint256 decimal = 10 ** 18;
-        
+
         rate = feePayTokenList[token];
         if(rate > 0){
-            tokenFee = mulDiv(amount, feePayTokenList[token], decimal);
+            tokenFee = amount.mul(rate).div(10000);
             amountValid = amount.sub(tokenFee);
         }else{
             tokenFee = 0;
@@ -263,7 +228,7 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
 
             if((oriMinerFeeRate > 0) && (originMiner[_NFTToken][_NFTTokenID] != address(0))){
                 address payable _oriFeeTo = address(uint160(originMiner[_NFTToken][_NFTTokenID]));
-                uint256 oriFee = _payAmount.div(10000).mul(oriMinerFeeRate);
+                uint256 oriFee = _payAmount.mul(oriMinerFeeRate).div(10000);
                 _oriFeeTo.transfer(oriFee);
 
                 amountValid = amountValid.sub(oriFee);
@@ -281,7 +246,7 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
             }
 
             if((oriMinerFeeRate > 0) && (originMiner[_NFTToken][_NFTTokenID] != address(0))){
-                uint256 oriFee = _payAmount.div(10000).mul(oriMinerFeeRate);
+                uint256 oriFee = _payAmount.mul(oriMinerFeeRate).div(10000);
                 IERC20(_payTokenAddress).safeTransferFrom(msg.sender, originMiner[_NFTToken][_NFTTokenID], oriFee);
 
                 amountValid = amountValid.sub(oriFee);

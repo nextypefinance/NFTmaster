@@ -23,7 +23,6 @@ contract Auction is Ownable, ReentrancyGuard{
     address public payToken;
 
     // state
-    bool public canceled;
     address public highestBidder;
     mapping(address => uint256) public fundsByBidder;
     bool ownerHasWithdrawn;
@@ -32,7 +31,7 @@ contract Auction is Ownable, ReentrancyGuard{
 
     event LogBid(address bidder, uint bid, address highestBidder, uint highestBid);
     event LogWithdrawal();
-    event LogCanceled();
+
 
     constructor() public {
         factory = msg.sender;
@@ -122,7 +121,7 @@ contract Auction is Ownable, ReentrancyGuard{
     }
 
 
-    function withdraw() public onlyEndedOrCanceled nonReentrant returns (bool success)
+    function withdraw() public onlyEnded nonReentrant returns (bool success)
     {
         address withdrawalAccount;
         uint withdrawalAmount;
@@ -200,7 +199,7 @@ contract Auction is Ownable, ReentrancyGuard{
         _;
     }
 
-    modifier onlyEndedOrCanceled {
+    modifier onlyEnded {
         require(block.timestamp > endTime, "auction is not close");
         _;
     }

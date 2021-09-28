@@ -75,10 +75,10 @@ contract AuctionFactory is Ownable, ReentrancyGuard{
 
     // calculates the CREATE2 address for a pair without making any external calls
     function auctionFor(address _token, uint256 _tokenId, uint _initFund, uint _bidIncrement, uint _endTime, uint _payType) public view returns (address auction) {
-        auction = address(uint(keccak256(abi.encodePacked(
+        auction = address(uint(keccak256(abi.encode(
                 hex'ff',
                 address(this),
-                keccak256(abi.encodePacked(_token, _tokenId, _initFund, _bidIncrement, _endTime, _payType)),
+                keccak256(abi.encode(_token, _tokenId, _initFund, _bidIncrement, _endTime, _payType)),
                 initCodeHash
             ))));
     }
