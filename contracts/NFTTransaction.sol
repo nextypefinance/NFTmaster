@@ -94,7 +94,7 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
     function setPayTokenFee(address token, uint256 amount) public onlyOwner {
         require(token != address(0), "token is zero address");
         require(payTokenIsAllowed(token) == true, "token is not allowed");
-        require(amount < 10000, "amount overflow");
+        require(amount < 5000, "amount overflow");
         
         feePayTokenList[token] = amount;
         emit SetPayTokenFee(token, amount);
@@ -293,7 +293,7 @@ contract NFTTransaction is Ownable, ReentrancyGuard {
 
     function setOriMinerFeeToRate(uint256 _rate) external {
         require(msg.sender == oriMinerSetter, 'setOriMinerFeeToRate: FORBIDDEN');
-	    require(_rate < 10000, "setOriMinerFeeToRate: FEE_TO_RATE_TOO_HIGH");
+	    require(_rate < 5000, "setOriMinerFeeToRate: FEE_TO_RATE_TOO_HIGH");
         oriMinerFeeRate = _rate;
     }
 

@@ -69,7 +69,7 @@ contract AuctionFactory is Ownable, ReentrancyGuard{
     function setFeeToRate(uint256 _rate) external {
         require(msg.sender == feeToSetter, 'AuctionFactory: FORBIDDEN');
         require(_rate > 0, "AuctionFactory: FEE_TO_RATE_OVERFLOW");
-	require(_rate < 10000, "AuctionFactory: FEE_TO_RATE_TOO_HIGH");
+	    require(_rate < 5000, "AuctionFactory: FEE_TO_RATE_TOO_HIGH");
         feeToRate = _rate;
     }
 
