@@ -35,7 +35,7 @@ contract BlindBox is Ownable, ReentrancyGuard {
     function blindPurchase() public nonReentrant returns(address, uint256){
         uint256 remaining = getRemainder();
         require(remaining > 0, "supply is 0");
-        require(boxStatus == true, "box is pause");
+        require(boxStatus, "box is pause");
 
         IERC20(payToken).transferFrom(msg.sender, platformAddress, payPrice);
 
@@ -69,7 +69,7 @@ contract BlindBox is Ownable, ReentrancyGuard {
         return _tmpSupply;
     }
 
-    function setBoxSupply(address[] memory _addressList, uint256[] memory _numberList) public nonReentrant{
+    function setBoxSupply(address[] memory _addressList, uint256[] memory _numberList) external nonReentrant{
         require(onlyAdmin(msg.sender), "Only administrators can operate");
         require(_addressList.length > 0, "_addressList is empty");
         require(_addressList.length == _numberList.length, "Inconsistent array length");
@@ -101,7 +101,7 @@ contract BlindBox is Ownable, ReentrancyGuard {
         platformAddress = _token;
     }
 
-    function setAdminList(address[] memory _list) public onlyOwner nonReentrant{
+    function setAdminList(address[] memory _list) external onlyOwner nonReentrant{
         require(_list.length > 0, "_list is empty");
         
         for ( uint256 nIndex = 0; nIndex < _list.length; nIndex++){
